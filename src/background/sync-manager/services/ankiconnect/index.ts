@@ -345,14 +345,13 @@ export class Service extends SyncService<SyncConfig> {
       .join(`<div class="trans">${trans}</div>`)
   }
 
-  private _div: HTMLElement | undefined
   escapeHTML(text: string): string {
-    if (!this._div) {
-      this._div = document.createElement('div')
-      this._div.appendChild(document.createTextNode(''))
-    }
-    this._div.firstChild!.nodeValue = text
-    return this._div.innerHTML
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
   }
 
   extractTags(): string[] {
