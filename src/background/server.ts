@@ -43,6 +43,11 @@ export class BackgroundServer {
     search: SearchFunction<DictSearchResult<any>, P>
     getSrcPage: GetSrcPageFunction
   }> {
+    // Special handling for macos to ensure it loads correctly
+    if (id === 'macos') {
+      return import('@/components/dictionaries/macos/engine')
+    }
+
     return import(
       /* webpackInclude: /engine\.ts$/ */
       /* webpackMode: "lazy" */

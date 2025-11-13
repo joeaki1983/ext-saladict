@@ -1,0 +1,29 @@
+{
+  "name": {
+    "en": "macOS TTS",
+    "zh-CN": "macOS 系统语音",
+    "zh-TW": "macOS 系統語音"
+  },
+  "options": {
+    "rate": {
+      "en": "Speech rate",
+      "zh-CN": "语速",
+      "zh-TW": "語速"
+    },
+    "pitch": {
+      "en": "Pitch",
+      "zh-CN": "音调",
+      "zh-TW": "音調"
+    },
+    "volume": {
+      "en": "Volume",
+      "zh-CN": "音量",
+      "zh-TW": "音量"
+    },
+    "voiceURI": {
+      "en": "Voice URI",
+      "zh-CN": "语音 URI",
+      "zh-TW": "語音 URI"
+    }
+  }
+}

@@ -20,6 +20,7 @@ import lexico from '@/components/dictionaries/lexico/config'
 import liangan from '@/components/dictionaries/liangan/config'
 import longman from '@/components/dictionaries/longman/config'
 import macmillan from '@/components/dictionaries/macmillan/config'
+import macos from '@/components/dictionaries/macos/config'
 import mojidict from '@/components/dictionaries/mojidict/config'
 import naver from '@/components/dictionaries/naver/config'
 import renren from '@/components/dictionaries/renren/config'
@@ -60,6 +61,7 @@ export const defaultAllDicts = {
   liangan: liangan(),
   longman: longman(),
   macmillan: macmillan(),
+  macos: macos(),
   mojidict: mojidict(),
   naver: naver(),
   renren: renren(),

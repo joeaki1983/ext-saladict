@@ -312,7 +312,8 @@ function _getDefaultConfig() {
           'lexico',
           'urban',
           'websterlearner',
-          'youdao'
+          'youdao',
+          'macos'
         ] as DictID[],
         accent: 'uk' as 'us' | 'uk'
       },
