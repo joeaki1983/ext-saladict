@@ -43,7 +43,7 @@ module.exports = {
       popup: {
         entry: 'popup',
         webext: {
-          type: 'browser_action',
+          type: 'action',
           manifest: {
             default_icon: {
               '16': 'assets/icon-16.png',
@@ -72,7 +72,7 @@ module.exports = {
       background: {
         entry: 'background',
         webext: {
-          type: 'background',
+          type: 'service_worker',
           setup: 'background/__fake__/env.ts'
         }
       },
@@ -95,6 +95,10 @@ module.exports = {
 
       'audio-control': {
         entry: 'audio-control'
+      },
+
+      offscreen: {
+        entry: 'offscreen'
       }
     }
   },

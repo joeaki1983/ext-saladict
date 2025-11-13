@@ -152,6 +152,20 @@ export type MessageConfig = MessageConfigType<{
 
   STOP_AUDIO: {}
 
+  OFFSCREEN_PLAY_AUDIO: {
+    payload: { src: string }
+  }
+
+  OFFSCREEN_STOP_AUDIO: {}
+
+  OFFSCREEN_COPY_TEXT: {
+    payload: { text: string }
+  }
+
+  OFFSCREEN_READ_TEXT: {
+    response: string
+  }
+
   LAST_PLAY_AUDIO: {
     response?: null | { src: string; timestamp: number }
   }

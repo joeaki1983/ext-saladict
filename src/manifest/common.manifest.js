@@ -1,9 +1,9 @@
 module.exports = {
-  manifest_version: 2,
+  manifest_version: 3,
 
   homepage_url: 'https://saladict.crimx.com/',
 
-  minimum_chrome_version: '55',
+  minimum_chrome_version: '109',
 
   name: '__MSG_extension_name__',
   short_name: '__MSG_extension_short_name__',
@@ -75,13 +75,18 @@ module.exports = {
   },
 
   web_accessible_resources: [
-    'assets/*',
-    'audio-control.html',
-    'quick-search.html'
+    {
+      resources: [
+        'assets/*',
+        'audio-control.html',
+        'quick-search.html',
+        'offscreen.html'
+      ],
+      matches: ['<all_urls>']
+    }
   ],
 
   permissions: [
-    '<all_urls>',
     'alarms',
     'contextMenus',
     'cookies',
@@ -90,10 +95,20 @@ module.exports = {
     'tabs',
     'unlimitedStorage',
     'webRequest',
-    'webRequestBlocking'
+    'webRequestBlocking',
+    'system.display'
   ],
+
+  host_permissions: ['<all_urls>'],
 
   optional_permissions: ['clipboardRead', 'clipboardWrite'],
 
-  content_security_policy: "script-src 'self'; object-src 'self'"
+  background: {
+    service_worker: 'background.js',
+    type: 'module'
+  },
+
+  content_security_policy: {
+    extension_pages: "script-src 'self'; object-src 'self'"
+  }
 }

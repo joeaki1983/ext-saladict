@@ -70,8 +70,7 @@ export class BackgroundServer {
         case 'PLAY_AUDIO':
           return AudioManager.getInstance().play(msg.payload)
         case 'STOP_AUDIO':
-          AudioManager.getInstance().reset()
-          return
+          return AudioManager.getInstance().reset()
         case 'FETCH_DICT_RESULT':
           return this.fetchDictResult(msg.payload)
         case 'DICT_ENGINE_METHOD':
@@ -103,6 +102,7 @@ export class BackgroundServer {
           })
         case 'DELETE_WORDS':
           return deleteWords(msg.payload).then(response => {
+            AudioManager.getInstance().reset()
             this.notifyWordSaved()
             return response
           })

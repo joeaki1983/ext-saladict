@@ -1,15 +1,20 @@
 {
-  "background": {
-    "persistent": true
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' chrome-extension://hfjbmagddngcpeloejdejnfgbamkjaeg/ chrome-extension://aibcglbfblnogfjhbcmmpobjhnomhcdo/; object-src 'self'"
   },
-  "options_ui": {
-    "chrome_style": false
-  },
-  "optional_permissions": [
-    "background"
-  ],
-  "content_security_policy": "script-src 'self' chrome-extension://hfjbmagddngcpeloejdejnfgbamkjaeg/ chrome-extension://aibcglbfblnogfjhbcmmpobjhnomhcdo/; object-src 'self'",
   "incognito": "split",
   "update_url": "https://clients2.google.com/service/update2/crx",
-  "minimum_chrome_version": "63"
+  "minimum_chrome_version": "109",
+  "offscreen_documents": [
+    {
+      "matches": ["<all_urls>"],
+      "reason": "AUDIO_PLAYBACK",
+      "justification": "Provide audio playback and clipboard features for Saladict."
+    },
+    {
+      "matches": ["<all_urls>"],
+      "reason": "CLIPBOARD",
+      "justification": "Provide audio playback and clipboard features for Saladict."
+    }
+  ]
 }
