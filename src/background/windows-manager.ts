@@ -10,6 +10,53 @@ interface WinRect {
   top: number
 }
 
+type WorkArea = WinRect
+
+const defaultWorkArea: WorkArea = {
+  width: 1280,
+  height: 720,
+  left: 0,
+  top: 0
+}
+
+async function getPrimaryWorkArea(): Promise<WorkArea> {
+  const chromeAPI = (globalThis as typeof globalThis & { chrome?: any }).chrome
+  const displayAPI = chromeAPI?.system?.display
+
+  if (!displayAPI?.getInfo) {
+    return defaultWorkArea
+  }
+
+  try {
+    const displays = await new Promise<any[]>((resolve, reject) => {
+      try {
+        displayAPI.getInfo(resolve)
+      } catch (error) {
+        reject(error)
+      }
+    })
+
+    if (!Array.isArray(displays) || displays.length === 0) {
+      return defaultWorkArea
+    }
+
+    const primary = displays.find(display => display.isPrimary) || displays[0]
+    const workArea = primary?.workArea || primary?.bounds || {}
+
+    const width = Number(workArea.width) || defaultWorkArea.width
+    const height = Number(workArea.height) || defaultWorkArea.height
+    const left = Number(workArea.left) || defaultWorkArea.left
+    const top = Number(workArea.top) || defaultWorkArea.top
+
+    return { width, height, left, top }
+  } catch (error) {
+    if (process.env.DEBUG) {
+      console.warn(error)
+    }
+    return defaultWorkArea
+  }
+}
+
 const safeUpdateWindow: typeof browser.windows.update = (...args) =>
   browser.windows.update(...args).catch(console.warn as (m: any) => undefined)
 
@@ -83,25 +130,34 @@ export class MainWindowsManager {
     const sidebarWidth =
       (sidebarSnapshot && sidebarSnapshot.width) || window.appConfig.panelWidth
 
-    const updateInfo =
+    let updateInfo: browser.windows.UpdateInfo & { state?: 'normal' }
+
+    if (
       mainWin.top != null &&
       mainWin.left != null &&
       mainWin.width != null &&
       mainWin.height != null
-        ? {
-            top: await this.correctTop(mainWin.top),
-            left: side === 'right' ? mainWin.left : mainWin.left + sidebarWidth,
-            width: mainWin.width - sidebarWidth,
-            height: mainWin.height,
-            state: 'normal' as 'normal'
-          }
-        : {
-            top: 0,
-            left: side === 'right' ? 0 : sidebarWidth,
-            width: window.screen.availWidth - sidebarWidth,
-            height: window.screen.availHeight,
-            state: 'normal' as 'normal'
-          }
+    ) {
+      updateInfo = {
+        top: await this.correctTop(mainWin.top),
+        left: side === 'right' ? mainWin.left : mainWin.left + sidebarWidth,
+        width: mainWin.width - sidebarWidth,
+        height: mainWin.height,
+        state: 'normal'
+      }
+    } else {
+      const workArea = await getPrimaryWorkArea()
+      updateInfo = {
+        top: Math.round(workArea.top),
+        left:
+          side === 'right'
+            ? Math.round(workArea.left)
+            : Math.round(workArea.left + sidebarWidth),
+        width: Math.max(workArea.width - sidebarWidth, sidebarWidth),
+        height: Math.round(workArea.height),
+        state: 'normal'
+      }
+    }
 
     if (side === 'right') {
       // fix a chrome bug by moving 1 extra pixal then to 0
@@ -185,7 +241,7 @@ export class QsPanelManager {
     const qsPanelRect = window.appConfig.qssaSidebar
       ? await this.getSidebarRect(window.appConfig.qssaSidebar)
       : (window.appConfig.qssaRectMemo && (await this.getStorageRect())) ||
-        this.getDefaultRect()
+        (await this.getDefaultRect())
 
     let qsPanelWin: browser.windows.Window | undefined
 
@@ -311,7 +367,7 @@ export class QsPanelManager {
     } else if (this.qsPanelId != null) {
       await safeUpdateWindow(this.qsPanelId, {
         focused: true,
-        ...this.getDefaultRect()
+        ...(await this.getDefaultRect())
       })
     }
     this.destroySnapshot()
@@ -339,7 +395,7 @@ export class QsPanelManager {
     this.isSidebar = !this.isSidebar
   }
 
-  getDefaultRect(): WinRect {
+  async getDefaultRect(): Promise<WinRect> {
     const { qsLocation, qssaHeight } = window.appConfig
 
     let qsPanelLeft = 10
@@ -347,50 +403,52 @@ export class QsPanelManager {
     const qsPanelWidth = window.appConfig.panelWidth
     const qsPanelHeight = window.appConfig.qssaHeight
 
+    const workArea = await getPrimaryWorkArea()
+
     switch (qsLocation) {
       case 'CENTER':
-        qsPanelLeft = (window.screen.availWidth - qsPanelWidth) / 2
-        qsPanelTop = (window.screen.availHeight - qssaHeight) / 2
+        qsPanelLeft = (workArea.width - qsPanelWidth) / 2
+        qsPanelTop = (workArea.height - qssaHeight) / 2
         break
       case 'TOP':
-        qsPanelLeft = (window.screen.availWidth - qsPanelWidth) / 2
+        qsPanelLeft = (workArea.width - qsPanelWidth) / 2
         qsPanelTop = 30
         break
       case 'RIGHT':
-        qsPanelLeft = window.screen.availWidth - qsPanelWidth - 30
-        qsPanelTop = (window.screen.availHeight - qssaHeight) / 2
+        qsPanelLeft = workArea.width - qsPanelWidth - 30
+        qsPanelTop = (workArea.height - qssaHeight) / 2
         break
       case 'BOTTOM':
-        qsPanelLeft = (window.screen.availWidth - qsPanelWidth) / 2
-        qsPanelTop = window.screen.availHeight - qsPanelHeight - 10
+        qsPanelLeft = (workArea.width - qsPanelWidth) / 2
+        qsPanelTop = workArea.height - qsPanelHeight - 10
         break
       case 'LEFT':
         qsPanelLeft = 10
-        qsPanelTop = (window.screen.availHeight - qssaHeight) / 2
+        qsPanelTop = (workArea.height - qssaHeight) / 2
         break
       case 'TOP_LEFT':
         qsPanelLeft = 10
         qsPanelTop = 30
         break
       case 'TOP_RIGHT':
-        qsPanelLeft = window.screen.availWidth - qsPanelWidth - 30
+        qsPanelLeft = workArea.width - qsPanelWidth - 30
         qsPanelTop = 30
         break
       case 'BOTTOM_LEFT':
         qsPanelLeft = 10
-        qsPanelTop = window.screen.availHeight - qsPanelHeight - 10
+        qsPanelTop = workArea.height - qsPanelHeight - 10
         break
       case 'BOTTOM_RIGHT':
-        qsPanelLeft = window.screen.availWidth - qsPanelWidth - 30
-        qsPanelTop = window.screen.availHeight - qsPanelHeight - 10
+        qsPanelLeft = workArea.width - qsPanelWidth - 30
+        qsPanelTop = workArea.height - qsPanelHeight - 10
         break
     }
 
     // coords must be integer
     // plus offset of other screen
     return {
-      top: Math.round(qsPanelTop + (window.screen['availTop'] || 0)),
-      left: Math.round(qsPanelLeft + (window.screen['availLeft'] || 0)),
+      top: Math.round(qsPanelTop + workArea.top),
+      left: Math.round(qsPanelLeft + workArea.left),
       width: Math.round(qsPanelWidth),
       height: Math.round(qsPanelHeight)
     }
@@ -412,32 +470,38 @@ export class QsPanelManager {
     const panelWidth =
       (this.snapshot && this.snapshot.width) || window.appConfig.panelWidth
     const mainWin = this.mainWindowsManager.snapshot
-    return mainWin &&
+    if (
+      mainWin &&
       mainWin.state === 'normal' &&
       mainWin.top != null &&
       mainWin.left != null &&
       mainWin.width != null &&
       mainWin.height != null
-      ? // coords must be integer
-        {
-          top: Math.round(
-            (await this.mainWindowsManager.correctTop(mainWin.top)) || 0
-          ),
-          left: Math.round(
-            side === 'right'
-              ? Math.max(mainWin.width - panelWidth, panelWidth)
-              : mainWin.left
-          ),
-          width: Math.round(panelWidth),
-          height: Math.round(mainWin.height)
-        }
-      : {
-          top: 0,
-          left: Math.round(
-            side === 'right' ? window.screen.availWidth - panelWidth : 0
-          ),
-          width: Math.round(panelWidth),
-          height: Math.round(window.screen.availHeight)
-        }
+    ) {
+      return {
+        top: Math.round(
+          (await this.mainWindowsManager.correctTop(mainWin.top)) || 0
+        ),
+        left: Math.round(
+          side === 'right'
+            ? Math.max(mainWin.width - panelWidth, panelWidth)
+            : mainWin.left
+        ),
+        width: Math.round(panelWidth),
+        height: Math.round(mainWin.height)
+      }
+    }
+
+    const workArea = await getPrimaryWorkArea()
+    return {
+      top: Math.round(workArea.top),
+      left: Math.round(
+        side === 'right'
+          ? workArea.left + Math.max(workArea.width - panelWidth, 0)
+          : workArea.left
+      ),
+      width: Math.round(Math.min(panelWidth, workArea.width)),
+      height: Math.round(workArea.height)
+    }
   }
 }

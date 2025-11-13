@@ -1,4 +1,5 @@
 import { openUrl } from '@/_helpers/browser-api'
+import { sendOffscreenMessage } from './offscreen'
 
 export async function copyTextToClipboard(text: string): Promise<void> {
   if (
@@ -11,13 +12,16 @@ export async function copyTextToClipboard(text: string): Promise<void> {
     return
   }
 
-  const copyFrom = document.createElement('textarea')
-  copyFrom.textContent = text
-  document.body.appendChild(copyFrom)
-  copyFrom.select()
-  document.execCommand('copy')
-  copyFrom.blur()
-  document.body.removeChild(copyFrom)
+  try {
+    await sendOffscreenMessage({
+      type: 'OFFSCREEN_COPY_TEXT',
+      payload: { text }
+    })
+  } catch (error) {
+    if (process.env.DEBUG) {
+      console.warn(error)
+    }
+  }
 }
 
 export async function getTextFromClipboard(): Promise<string> {
@@ -31,20 +35,14 @@ export async function getTextFromClipboard(): Promise<string> {
     return ''
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    return 'clipboard content'
-  } else {
-    let el = document.getElementById(
-      'saladict-paste'
-    ) as HTMLTextAreaElement | null
-    if (!el) {
-      el = document.createElement('textarea')
-      el.id = 'saladict-paste'
-      document.body.appendChild(el)
+  try {
+    return (
+      (await sendOffscreenMessage({ type: 'OFFSCREEN_READ_TEXT' })) || ''
+    ) as string
+  } catch (error) {
+    if (process.env.DEBUG) {
+      console.warn(error)
     }
-    el.value = ''
-    el.focus()
-    document.execCommand('paste')
-    return el.value || ''
+    return ''
   }
 }
